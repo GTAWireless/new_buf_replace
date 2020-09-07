@@ -9,6 +9,10 @@
 /* Log debug config */
 #define MESH_CODE_LOG_DEBUG_EN                  0
 #define CONFIG_BT_DEBUG                         1
+#define ADV_NET_BUF_DEBUG_EN                    1
+
+/* Buf Replace Config */
+#define CONFIG_BUF_REPLACE_EN                   0                   //use for replace old buf to new buf
 
 /* Compile config */
 #define ADAPTATION_COMPILE_DEBUG                0
@@ -17,7 +21,7 @@
 #define CMD_DIRECT_TO_BTCTRLER_TASK_EN          1
 
 /* Node features config */
-#define CONFIG_BT_MESH_RELAY                    1
+#define CONFIG_BT_MESH_RELAY                   0// 1
 #define CONFIG_BT_MESH_PROXY                    1
 #define CONFIG_BT_MESH_GATT_PROXY               1
 #define CONFIG_BT_MESH_LOW_POWER                1

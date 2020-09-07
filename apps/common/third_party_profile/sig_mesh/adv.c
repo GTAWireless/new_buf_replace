@@ -161,6 +161,8 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
     }
 }
 
+
+///mesh…®√Ë
 int bt_mesh_scan_enable(void)
 {
     BT_DBG("");

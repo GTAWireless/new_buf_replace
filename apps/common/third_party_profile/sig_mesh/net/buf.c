@@ -44,8 +44,15 @@
 #define WARN_ALLOC_INTERVAL K_FOREVER
 #endif
 
+
+///´òÓ¡µ×²ãÐÅÏ¢
+/* #undef BT_INFO */
+/* #define BT_INFO     printf */
+
 /* Linker-defined symbol bound to the static pool structs */
 extern struct net_buf_pool _net_buf_pool_list[];
+
+extern void newbuf_replace(struct net_buf_pool *pool);
 
 struct net_buf_pool *net_buf_pool_get(int id)
 {
@@ -149,14 +156,23 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
     /* We need to lock interrupts temporarily to prevent race conditions
      * when accessing pool->uninit_count.
      */
+#if ADV_NET_BUF_DEBUG_EN
+    printf("rc=%d", pool->free_count);
+#endif /* ADV_NET_BUF_DEBUG_EN */
     key = irq_lock();
-
     /* ASSERT(pool->free_count, "---> pool->free_count 0"); */
 #if NET_BUF_FREE_EN
+
+#if CONFIG_BUF_REPLACE_EN
+    if ((pool->free_count) == 0) {
+            newbuf_replace(pool);
+    }
+#endif // CONFIG_BUF_REPLACE_EN
+    printf("\n         the free_count = %d         \n", pool->free_count);
     if (pool->free_count) {
 
         pool->free_count--;
-        BT_INFO("free_count=%d", pool->free_count);
+        /* BT_INFO("free_count=%d", pool->free_count); */
         do {
             uninit_count = pool->uninit_count--;
 
@@ -166,7 +182,12 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
             buf = pool_get_uninit(pool, uninit_count);
 
-        } while (buf->flags);
+        } while (buf->flags | BT_MESH_ADV(buf)->busy);
+
+        irq_unlock(key);
+
+        goto success;
+    }
 #else
     /* If there are uninitialized buffers we're guaranteed to succeed
      * with the allocation one way or another.
@@ -180,11 +201,13 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
         buf = pool_get_uninit(pool, uninit_count);
 
-#endif /* NET_BUF_FREE_EN */
         irq_unlock(key);
 
         goto success;
     }
+
+#endif /* NET_BUF_FREE_EN */
+
 
     irq_unlock(key);
 
@@ -196,6 +219,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 success:
     NET_BUF_DBG("allocated buf 0x%x", buf);
 
+    memset((u8 *)buf, 0, sizeof(*buf));
     if (size) {
         buf->__buf = data_alloc(buf, &size, timeout);
         if (!buf->__buf) {
@@ -215,6 +239,8 @@ success:
 
     return buf;
 }
+
+
 
 struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, s32_t timeout)
 {
@@ -245,6 +271,9 @@ int net_buf_free(struct net_buf *buf)
     irq_unlock(key);
 
     BT_INFO("free_count=%d, addr=0x%x", pool->free_count, buf);
+#if ADV_NET_BUF_DEBUG_EN
+    printf("fc=%d", pool->free_count);
+#endif /* ADV_NET_BUF_DEBUG_EN */
 
     return 0;
 }
@@ -270,67 +299,6 @@ struct net_buf *net_buf_get_next(struct net_buf *buf)
 }
 
 #endif /* NET_BUF_FREE_EN */
-
-#if NET_BUF_TEST_EN
-
-#define TEST_BUF_COUNT          20
-#define TEST_DATA_SIZE          29
-#define TEST_USER_DATA_SIZE     4
-
-NET_BUF_POOL_DEFINE(test_net_buf_pool, TEST_BUF_COUNT,
-                    TEST_DATA_SIZE, TEST_USER_DATA_SIZE, NULL);
-
-void net_buf_test(void)
-{
-    struct net_buf_pool *pool = &test_net_buf_pool;
-    struct net_buf *buf[TEST_BUF_COUNT + 1];
-    int i, j;
-
-    //< test 1
-    for (i = 0; ; i++) {
-        BT_INFO("allloc i=%d, buf_count=%d, uninit_count=%d, free_count=%d",
-                i, pool->buf_count, pool->uninit_count, pool->free_count);
-        buf[i] = net_buf_alloc_fixed(pool, 0);
-        BT_INFO("buf addr=0x%x", buf[i]);
-        if (NULL == buf[i]) {
-            break;
-        }
-    }
-    if ((i != pool->buf_count) && (pool->free_count != 0)) {
-        BT_ERR("net_buf_test process 1 alloc error");
-        return;
-    }
-    for (j = 0; j < i; j++) {
-        BT_INFO("free j=%d, free_count=%d", j, pool->free_count);
-        BT_INFO("buf addr=0x%x", buf[j]);
-        net_buf_free(buf[j]);
-        BT_INFO("next buf addr=0x%x", net_buf_get_next(buf[j]));
-    }
-    if (pool->free_count != pool->buf_count) {
-        BT_ERR("net_buf_test process 1 free error");
-        return;
-    }
-
-    //< test 2
-    struct net_buf *buf_temp;
-    buf_temp = net_buf_alloc_fixed(pool, 0);
-    if (buf[0] != buf_temp) {
-        BT_ERR("net_buf_test process 2 alloc error", buf[0], buf_temp);
-        return;
-    }
-    net_buf_free(buf[0]);
-    buf_temp = net_buf_alloc_fixed(pool, 0);
-    if (buf[1] != buf_temp) {
-        BT_ERR("net_buf_test process 2 free error", buf[1], buf_temp);
-        return;
-    }
-
-    BT_INFO("--- net_buf_test succ !!!");
-
-    while (1);
-}
-
-#endif /* NET_BUF_TEST_EN */
 
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
@@ -662,6 +630,18 @@ struct net_buf *net_buf_slist_simple_get(sys_slist_t *list)
     irq_unlock(key);
 
     return (struct net_buf *)buf;
+}
+
+u32 get_list_count(sys_slist_t *list)
+{
+    u32 cnt = 0;
+    sys_snode_t *node = list->head;
+    while (node) {
+        node = node->next;
+        cnt++;
+    }
+
+    return cnt;
 }
 
 struct net_buf *net_buf_slist_get(sys_slist_t *list)

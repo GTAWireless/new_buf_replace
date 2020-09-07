@@ -57,7 +57,7 @@ const u16 config_bt_mesh_proxy_node_adv_interval = ADV_SCAN_UNIT(300); // unit: 
  * @brief Conifg complete local name
  */
 /*-----------------------------------------------------------*/
-#define BLE_DEV_NAME        'O', 'n', 'O', 'f', 'f', '_', 's', 'r', 'v'
+#define BLE_DEV_NAME        'O', 'n', 'O', 'f', 'f', '_', 's', 'r', 'v', '2'
 
 const uint8_t mesh_name[] = {
     // Name
@@ -75,8 +75,7 @@ void get_mesh_adv_name(u8 *len, u8 **data)
  * @brief Conifg MAC of current demo
  */
 /*-----------------------------------------------------------*/
-#define CUR_DEVICE_MAC_ADDR         0x222233445566
-
+#define CUR_DEVICE_MAC_ADDR         0x222233445567
 /*
  * Publication Declarations
  *

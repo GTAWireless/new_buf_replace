@@ -9,6 +9,7 @@
 #include "adaptation.h"
 #include "bluetooth.h"
 #include "ble/hci_ll.h"
+#include "adv.h"
 
 #define LOG_TAG             "[MESH-hci_core]"
 #define LOG_INFO_ENABLE
@@ -18,6 +19,9 @@
 #define LOG_DUMP_ENABLE
 #include "mesh_log.h"
 
+///底层打印
+/*#undef BT_INFO
+#define BT_INFO printf*/
 
 #if ADAPTATION_COMPILE_DEBUG
 
@@ -59,8 +63,9 @@ struct bt_hci_evt_le_generate_dhkey_complete {
     u8_t dhkey[32];
 } __packed;
 
+u16 connection_handle;
 struct bt_conn conn;
-static bool is_connect;
+bool is_connect;
 static u8_t pub_key[64];
 static struct bt_pub_key_cb *pub_key_cb;
 static bt_dh_key_cb_t dh_key_cb;
@@ -236,33 +241,51 @@ static inline void le_dhkey_complete(u8 *buf, u16 size)
 #define HCI_LE_CONNECTION_COMPLETE_EVENT                    0x01
 #define HCI_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE_EVENT    0x08
 #define HCI_LE_GENERATE_DHKEY_COMPLETE_EVENT                0x09
+#define HCI_LE_CONNECTION_UPDATE_COMPLETE                   0x03
 
+extern bool mesh_reset_flag;
+extern void bt_mesh_reset(void);
 void mesh_hci_event_callback(u8 packet_type, u8 channel, u8 *packet, u16 size)
 {
     switch (packet_type) {
     case HCI_EVENT:
         switch (packet[0]) {
         case HCI_DISCONNECTION_COMPLETE_EVENT:
-            BT_INFO("HCI_DISCONNECTION_COMPLETE_EVENT");
+            BT_INFO("HCI_DISCONNECTION_COMPLETE_EVENT11111111111111");
+//            if (mesh_reset_flag) {
+//                mesh_reset_flag = 0;
+//                bt_mesh_reset();
+//            }
             hci_set_disconn_run();
             resume_mesh_gatt_proxy_adv_thread();
+             ///bt_mesh_scan_disable();///不连接停止扫描
+            ///puts("bt_mesh_scan_disable 99999999999999999999999\n");
             break;
         case HCI_LE_META_EVENT:
             switch (packet[2]) {
             case HCI_LE_CONNECTION_COMPLETE_EVENT:
-                BT_INFO("HCI_LE_CONNECTION_COMPLETE_EVENT");
-                u16 connection_handle = sys_get_le16(&packet[4]);
+                BT_INFO("HCI_LE_CONNECTION_COMPLETE_EVENT22222222222222222");
+                connection_handle = sys_get_le16(&packet[4]);
                 hci_set_conn_run(connection_handle);
                 BT_INFO("connection handle =0x%x", connection_handle);
+                printf("c interval =0x%x", sys_get_le16(&packet[14]));
                 resume_mesh_gatt_proxy_adv_thread();
+                ///连接开始扫描
+                ///bt_mesh_scan_enable();
+               /// puts("bt_mesh_scan_enable 88888888888888888888888\n");
                 break;
             case HCI_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE_EVENT:
-                BT_INFO("HCI_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE_EVENT");
+                BT_INFO("HCI_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE_EVENT33333333333");
                 le_pkey_complete(packet + 3, size - 3);
                 break;
             case HCI_LE_GENERATE_DHKEY_COMPLETE_EVENT:
-                BT_INFO("HCI_LE_GENERATE_DHKEY_COMPLETE_EVENT");
+                BT_INFO("HCI_LE_GENERATE_DHKEY_COMPLETE_EVENT444444444444");
                 le_dhkey_complete(packet + 3, size - 3);
+                break;
+
+            case HCI_LE_CONNECTION_UPDATE_COMPLETE:
+                printf("HCI_LE_CONNECTION_UPDATE_COMPLETE");
+                printf("u interval =0x%x", sys_get_le16(&packet[6]));
                 break;
             }
             break;

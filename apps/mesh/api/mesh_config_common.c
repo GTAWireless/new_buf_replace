@@ -49,7 +49,7 @@ const u8 config_bt_mesh_friend_queue_size = 2;
  */
 /*-----------------------------------------------------------*/
 _WEAK_
-const u8 config_bt_mesh_adv_buf_count = 5;
+const u8 config_bt_mesh_adv_buf_count = 2;                                  //设置最大buf数量
 
 /**
  * @brief Config PB-ADV param

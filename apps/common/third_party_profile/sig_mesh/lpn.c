@@ -175,6 +175,7 @@ static void friend_clear_sent(int err, void *user_data)
      * enable scanning.
      */
     bt_mesh_scan_enable();
+    puts("bt_mesh_scan_enable111111111111111111111111\n");
 
     lpn->req_attempts++;
 
@@ -486,6 +487,7 @@ static void friend_response_received(struct bt_mesh_lpn *lpn)
     }
 
     k_delayed_work_cancel(&lpn->timer);
+    puts("bt_mesh_scan_disable 111111111111111111111111\n");
     bt_mesh_scan_disable();
     lpn_set_state(BT_MESH_LPN_ESTABLISHED);
     lpn->req_attempts = 0;
@@ -748,11 +750,13 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 {
     if (lpn->established) {
         BT_WARN("No response from Friend during ReceiveWindow");
+        puts("bt_mesh_scan_disable 22222222222222222222\n");
         bt_mesh_scan_disable();
         lpn_set_state(BT_MESH_LPN_ESTABLISHED);
         k_delayed_work_submit(&lpn->timer, POLL_RETRY_TIMEOUT);
     } else {
         if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+            puts("bt_mesh_scan_disable 33333333333333333333333\n");
             bt_mesh_scan_disable();
         }
 
@@ -790,6 +794,7 @@ static void lpn_timeout(struct k_work *work)
         BT_DBG("Starting to look for Friend nodes");
         lpn_set_state(BT_MESH_LPN_ENABLED);
         if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+            puts("bt_mesh_scan_disable 444444444444444444\n");
             bt_mesh_scan_disable();
         }
     /* fall through */
@@ -802,6 +807,7 @@ static void lpn_timeout(struct k_work *work)
         BT_DBG("BT_MESH_LPN_REQ_WAIT");
         LPN_REQ_IO_1();
         bt_mesh_scan_enable();
+        puts("bt_mesh_scan_enable 222222222222222222\n");
         //< 3.6.6.4.1 Low Power establishment
         //the node should listen for up to 1 second for the Friend Offer messages sent by potential Friend nodes
         k_delayed_work_submit(&lpn->timer,
@@ -813,6 +819,7 @@ static void lpn_timeout(struct k_work *work)
         BT_DBG("BT_MESH_LPN_WAIT_OFFER");
         BT_WARN("No acceptable Friend Offers received");
         if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+            puts("bt_mesh_scan_disable 5555555555555555\n");
             bt_mesh_scan_disable();
         }
         //< 3.6.6.4.1 Low Power establishment
@@ -854,6 +861,7 @@ static void lpn_timeout(struct k_work *work)
         k_delayed_work_submit(&lpn->timer,
                               lpn->adv_duration + SCAN_LATENCY +
                               lpn->recv_win);
+        puts("bt_mesh_scan_enable 3333333333333333\n");
         bt_mesh_scan_enable();
         lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
         break;
@@ -1119,15 +1127,17 @@ int bt_mesh_lpn_init(void)
 
     if (lpn->state == BT_MESH_LPN_ENABLED) {
         if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+            puts("bt_mesh_scan_disable 666666666666666666666\n");
             bt_mesh_scan_disable();
         } else {
+            puts("bt_mesh_scan_enable 444444444444444444\n");
             bt_mesh_scan_enable();
         }
 
         send_friend_req(lpn);
     } else {
         bt_mesh_scan_enable();
-
+        puts("bt_mesh_scan_enable 7777777777777777\n");
         if (IS_ENABLED(CONFIG_BT_MESH_LPN_AUTO)) {
             BT_DBG("Waiting %u ms for messages", LPN_AUTO_TIMEOUT);
             lpn_set_state(BT_MESH_LPN_TIMER);

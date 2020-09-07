@@ -1466,7 +1466,8 @@ void bt_mesh_net_start(void)
         BT_MESH_FEATURES_IS_SUPPORT(BT_MESH_FEAT_LOW_POWER)) {
         bt_mesh_lpn_init();
     } else {
-        bt_mesh_scan_enable();
+        puts("bt_mesh_scan_enable 6666666666666666\n");
+        bt_mesh_scan_enable();///为了不连接时，不进行扫描操作；连接时才进行扫描操作
     }
 
     if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {

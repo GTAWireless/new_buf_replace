@@ -88,6 +88,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 void bt_mesh_reset(void)
 {
     if (!bt_mesh.valid) {
+        puts("if (!bt_mesh.valid)\n\n");
         return;
     }
 
@@ -124,6 +125,7 @@ void bt_mesh_reset(void)
 
     (void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 
+    puts("bt_mesh_scan_disable 7777777777777777777777\n");
     bt_mesh_scan_disable();
     bt_mesh_beacon_disable();
 
@@ -141,6 +143,7 @@ bool bt_mesh_is_provisioned(void)
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 {
+    puts("bt_mesh_prov_enable\n\n");
     if (bt_mesh_is_provisioned()) {
         return -EALREADY;
     }
@@ -156,6 +159,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
     if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
         (bearers & BT_MESH_PROV_ADV)) {
         /* Make sure we're scanning for provisioning inviations */
+        puts("bt_mesh_scan_enable 5555555555555555555\n");
         bt_mesh_scan_enable();
         /* Enable unprovisioned beacon sending */
         if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
@@ -174,12 +178,14 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 
 int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 {
+    puts("bt_mesh_prov_disable\n\n");
     if (bt_mesh_is_provisioned()) {
         return -EALREADY;
     }
 
     if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
         (bearers & BT_MESH_PROV_ADV)) {
+        puts("bt_mesh_scan_disable 8888888888888888888888\n");
         bt_mesh_beacon_disable();
         bt_mesh_scan_disable();
     }

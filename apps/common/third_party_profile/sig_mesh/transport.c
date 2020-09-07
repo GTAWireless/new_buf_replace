@@ -20,7 +20,7 @@
 
 #define LOG_TAG             "[MESH-transport]"
 #define LOG_INFO_ENABLE
-#define LOG_DEBUG_ENABLE
+/* #define LOG_DEBUG_ENABLE */
 #define LOG_WARN_ENABLE
 #define LOG_ERROR_ENABLE
 #define LOG_DUMP_ENABLE
@@ -1340,7 +1340,7 @@ found_rx:
     /* Location in buffer can be calculated based on seg_o & rx->ctl */
     memcpy(rx->buf.data + (seg_o * seg_len(rx->ctl)), buf->data, buf->len);
 
-    BT_DBG("Received %u/%u", seg_o, seg_n);
+    BT_WARN("Received %u/%u", seg_o, seg_n);
 
     /* Mark segment as received */
     rx->block |= BIT(seg_o);
